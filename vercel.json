@@ -3,9 +3,5 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "GOOGLE_MAPS_API_KEY": "@google_maps_api_key",
-    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "@google_maps_api_key"
   }
 }
