@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fursat Photo - Google Maps Photo Extractor
 
-## Getting Started
+A beautiful Next.js application that extracts and downloads photos from Google Maps places with an Apple-inspired design.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 🗺️ Extract photos from any Google Maps place URL
+- 📱 Apple-like design with smooth animations
+- 📥 Download individual photos or all as a ZIP file
+- 🔒 Secure API key handling
+- 📱 Responsive design for all devices
+- ⚡ Fast and efficient photo processing
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Set up environment variables:**
+   Create a `.env.local` file in the root directory:
+   ```env
+   GOOGLE_MAPS_API_KEY=your_api_key_here
+   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+   ```
 
-## Learn More
+3. **Get a Google Maps API Key:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/google/maps-apis)
+   - Create a new project or select an existing one
+   - Enable the following APIs:
+     - Places API
+     - Maps JavaScript API
+   - Create credentials (API Key)
+   - Restrict the API key to your domain for security
 
-To learn more about Next.js, take a look at the following resources:
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
 
-## Deploy on Vercel
+1. Copy a Google Maps place URL (e.g., from a restaurant, hotel, or any business)
+2. Paste it into the input field
+3. Click "Extract Photos"
+4. View the photos in the gallery
+5. Download individual photos or all photos as a ZIP file
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard:
+   - `GOOGLE_MAPS_API_KEY`
+   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+4. Deploy!
+
+### Other Platforms
+
+The app can be deployed to any platform that supports Next.js:
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- AWS Amplify
+
+## API Endpoints
+
+- `POST /api/extract-place` - Extract coordinates and place name from URL
+- `POST /api/search-place` - Find place ID using coordinates
+- `POST /api/place-details` - Get place details and photo references
+- `POST /api/download-photo` - Download individual photo
+
+## Tech Stack
+
+- **Framework:** Next.js 14+ (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Icons:** Lucide React
+- **File Handling:** JSZip
+- **API:** Google Places API
+
+## Security
+
+- API keys are stored securely in environment variables
+- Server-side API calls protect your API key
+- No sensitive data is exposed to the client
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details
