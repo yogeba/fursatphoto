@@ -52,7 +52,7 @@ export default function PhotoGallery({
             {placeName}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            {photos.length} photo{photos.length !== 1 ? "s" : ""} found
+            📊 {photos.length} photo{photos.length !== 1 ? "s" : ""} found
           </p>
         </div>
 
@@ -66,9 +66,9 @@ export default function PhotoGallery({
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               <span>Downloading...</span>
             </div>
-          ) : (
-            "Download All"
-          )}
+            ) : (
+              "📦 Download All"
+            )}
         </button>
       </div>
 

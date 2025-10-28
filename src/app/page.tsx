@@ -194,10 +194,10 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Fursat Photo
+            📸 Fursat Photo
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Extract and download photos from Google Maps places with ease
+            Extract and download high-quality photos from any Google Maps place in seconds
           </p>
         </div>
 
@@ -242,7 +242,7 @@ export default function Home() {
                 onClick={resetApp}
                 className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl button-press"
               >
-                Try Again
+                🔄 Try Again
               </button>
             </div>
           )}
@@ -258,12 +258,12 @@ export default function Home() {
               />
 
               <div className="text-center pt-6">
-                <button
-                  onClick={resetApp}
-                  className="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-xl button-press"
-                >
-                  Extract Another Place
-                </button>
+              <button
+                onClick={resetApp}
+                className="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-xl button-press"
+              >
+                🔄 Extract Another Place
+              </button>
               </div>
             </div>
           )}

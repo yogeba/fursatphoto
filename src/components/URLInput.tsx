@@ -34,18 +34,18 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
             Google Maps URL
           </label>
           <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-            <p className="font-medium mb-1">How to get the full URL:</p>
+            <p className="font-medium mb-1">📋 How to get the full URL:</p>
             <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>Go to Google Maps and search for a place</li>
-              <li>Click the "Share" button on the place</li>
-              <li>Click "Copy link" - this gives you a short URL</li>
-              <li>Paste the short URL in your browser and press Enter</li>
+              <li>🔍 Go to Google Maps and search for a place</li>
+              <li>📤 Click the "Share" button on the place</li>
+              <li>📋 Click "Copy link" - this gives you a short URL</li>
+              <li>🌐 Paste the short URL in your browser and press Enter</li>
               <li>
-                Copy the full URL from the address bar (it will be much longer)
+                📝 Copy the full URL from the address bar (it will be much longer)
               </li>
             </ol>
             <p className="mt-2 text-xs">
-              <strong>Example:</strong> The full URL should look like this:
+              <strong>💡 Example:</strong> The full URL should look like this:
               <br />
               <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">
                 https://www.google.com/maps/place/Place+Name/@coordinates,17z/data=!3m1!4b1!4m9!3m8!1s...
@@ -56,7 +56,7 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
               onClick={handleExampleClick}
               className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
             >
-              Try this example: Smoky Falls Mae Fi Resort
+              🏨 Try this example: Smoky Falls Mae Fi Resort
             </button>
           </div>
           <div className="relative">
@@ -65,7 +65,7 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste your Google Maps place URL here..."
+              placeholder="🔗 Paste your Google Maps place URL here..."
               className="w-full px-4 py-3 text-base border border-gray-200 dark:border-gray-700 rounded-2xl glass-effect focus-ring transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               disabled={isLoading}
             />
@@ -95,9 +95,9 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               <span>Processing...</span>
             </div>
-          ) : (
-            "Extract Photos"
-          )}
+            ) : (
+              "📸 Extract Photos"
+            )}
         </button>
       </form>
     </div>
