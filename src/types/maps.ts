@@ -67,5 +67,7 @@ export interface AppState {
   totalReviews: number | null;
   generatedDescription: string | null;
   isGeneratingDescription: boolean;
+  coordinates: PlaceCoordinates | null;
+  location: string | null;
   currentStep: "input" | "loading" | "gallery" | "error";
 }
