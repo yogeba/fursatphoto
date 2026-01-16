@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PlacePhoto } from "@/types/maps";
-import { generatePhotoUrl } from "@/lib/maps-utils";
 
 interface PhotoGalleryProps {
   photos: PlacePhoto[];

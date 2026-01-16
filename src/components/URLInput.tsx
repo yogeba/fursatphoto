@@ -5,9 +5,11 @@ import { useState } from "react";
 interface URLInputProps {
   onSubmit: (url: string) => void;
   isLoading: boolean;
+  enableDescription: boolean;
+  onToggleDescription: () => void;
 }
 
-export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
+export default function URLInput({ onSubmit, isLoading, enableDescription, onToggleDescription }: URLInputProps) {
   const [url, setUrl] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,18 +29,42 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
     <div className="w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <label
-            htmlFor="maps-url"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Google Maps URL
-          </label>
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="maps-url"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Google Maps URL
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                AI Description
+              </span>
+              <button
+                type="button"
+                onClick={onToggleDescription}
+                className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+                  enableDescription
+                    ? "bg-blue-500"
+                    : "bg-gray-300 dark:bg-gray-600"
+                }`}
+                role="switch"
+                aria-checked={enableDescription}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${
+                    enableDescription ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
             <p className="font-medium mb-1">📋 How to get the full URL:</p>
             <ol className="list-decimal list-inside space-y-1 text-xs">
               <li>🔍 Go to Google Maps and search for a place</li>
-              <li>📤 Click the "Share" button on the place</li>
-              <li>📋 Click "Copy link" - this gives you a short URL</li>
+              <li>📤 Click the &quot;Share&quot; button on the place</li>
+              <li>📋 Click &quot;Copy link&quot; - this gives you a short URL</li>
               <li>🌐 Paste the short URL in your browser and press Enter</li>
               <li>
                 📝 Copy the full URL from the address bar (it will be much longer)

@@ -10,9 +10,20 @@ export interface PlacePhoto {
   html_attributions: string[];
 }
 
+export interface PlaceReview {
+  author_name: string;
+  rating: number;
+  text: string;
+  time: number;
+  relative_time_description: string;
+}
+
 export interface PlaceDetails {
   name: string;
   photos: PlacePhoto[];
+  reviews?: PlaceReview[];
+  rating?: number;
+  user_ratings_total?: number;
 }
 
 export interface GoogleMapsResponse {
@@ -51,5 +62,10 @@ export interface AppState {
   error: string | null;
   placeName: string | null;
   photos: PlacePhoto[];
+  reviews: PlaceReview[];
+  rating: number | null;
+  totalReviews: number | null;
+  generatedDescription: string | null;
+  isGeneratingDescription: boolean;
   currentStep: "input" | "loading" | "gallery" | "error";
 }

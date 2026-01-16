@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import URLInput from "@/components/URLInput";
 import PhotoGallery from "@/components/PhotoGallery";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   AppState,
-  PlacePhoto,
   ExtractPlaceResponse,
   SearchPlaceResponse,
   PlaceDetails,
 } from "@/types/maps";
 import JSZip from "jszip";
+
+const STORAGE_KEY = "fursatphoto_generate_description";
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>({
@@ -19,10 +20,31 @@ export default function Home() {
     error: null,
     placeName: null,
     photos: [],
+    reviews: [],
+    rating: null,
+    totalReviews: null,
+    generatedDescription: null,
+    isGeneratingDescription: false,
     currentStep: "input",
   });
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [enableDescription, setEnableDescription] = useState(true);
+
+  // Load preference from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+      setEnableDescription(saved === "true");
+    }
+  }, []);
+
+  // Save preference to localStorage when it changes
+  const toggleDescription = () => {
+    const newValue = !enableDescription;
+    setEnableDescription(newValue);
+    localStorage.setItem(STORAGE_KEY, String(newValue));
+  };
 
   const handleURLSubmit = async (url: string) => {
     setAppState({
@@ -30,6 +52,11 @@ export default function Home() {
       error: null,
       placeName: null,
       photos: [],
+      reviews: [],
+      rating: null,
+      totalReviews: null,
+      generatedDescription: null,
+      isGeneratingDescription: false,
       currentStep: "loading",
     });
 
@@ -80,13 +107,54 @@ export default function Home() {
 
       const detailsData: PlaceDetails = await detailsResponse.json();
 
+      // Set initial state with photos and reviews
       setAppState({
         isLoading: false,
         error: null,
         placeName: detailsData.name,
         photos: detailsData.photos || [],
+        reviews: enableDescription ? (detailsData.reviews || []) : [],
+        rating: enableDescription ? (detailsData.rating || null) : null,
+        totalReviews: enableDescription ? (detailsData.user_ratings_total || null) : null,
+        generatedDescription: null,
+        isGeneratingDescription: enableDescription && (detailsData.reviews?.length ?? 0) > 0,
         currentStep: "gallery",
       });
+
+      // Step 4: Generate Airbnb description (async, don't block UI)
+      if (enableDescription && detailsData.reviews && detailsData.reviews.length > 0) {
+        try {
+          const descResponse = await fetch("/api/generate-description", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              reviews: detailsData.reviews,
+              rating: detailsData.rating,
+              totalReviews: detailsData.user_ratings_total,
+              placeName: detailsData.name,
+            }),
+          });
+
+          if (descResponse.ok) {
+            const descData = await descResponse.json();
+            setAppState((prev) => ({
+              ...prev,
+              generatedDescription: descData.description,
+              isGeneratingDescription: false,
+            }));
+          } else {
+            setAppState((prev) => ({
+              ...prev,
+              isGeneratingDescription: false,
+            }));
+          }
+        } catch {
+          setAppState((prev) => ({
+            ...prev,
+            isGeneratingDescription: false,
+          }));
+        }
+      }
     } catch (error) {
       setAppState({
         isLoading: false,
@@ -96,6 +164,11 @@ export default function Home() {
             : "An unexpected error occurred",
         placeName: null,
         photos: [],
+        reviews: [],
+        rating: null,
+        totalReviews: null,
+        generatedDescription: null,
+        isGeneratingDescription: false,
         currentStep: "error",
       });
     }
@@ -184,6 +257,11 @@ export default function Home() {
       error: null,
       placeName: null,
       photos: [],
+      reviews: [],
+      rating: null,
+      totalReviews: null,
+      generatedDescription: null,
+      isGeneratingDescription: false,
       currentStep: "input",
     });
   };
@@ -208,6 +286,8 @@ export default function Home() {
               <URLInput
                 onSubmit={handleURLSubmit}
                 isLoading={appState.isLoading}
+                enableDescription={enableDescription}
+                onToggleDescription={toggleDescription}
               />
             </div>
           )}
@@ -249,6 +329,41 @@ export default function Home() {
 
           {appState.currentStep === "gallery" && (
             <div className="space-y-6 slide-up">
+              {/* Place Info Header */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {appState.placeName}
+                    </h2>
+                    {appState.rating && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-yellow-500 text-xl">⭐</span>
+                        <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                          {appState.rating.toFixed(1)}
+                        </span>
+                        {appState.totalReviews && (
+                          <span className="text-gray-500 dark:text-gray-400">
+                            ({appState.totalReviews} reviews)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+                      {appState.photos.length} photos
+                    </span>
+                    {appState.reviews.length > 0 && (
+                      <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                        {appState.reviews.length} reviews loaded
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Photo Gallery */}
               <PhotoGallery
                 photos={appState.photos}
                 placeName={appState.placeName || ""}
@@ -257,13 +372,52 @@ export default function Home() {
                 isDownloading={isDownloading}
               />
 
+              {/* Generated Description Section - only show if description generation was enabled */}
+              {(appState.isGeneratingDescription || appState.generatedDescription || appState.reviews.length > 0) && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      ✨ AI-Generated Airbnb Description
+                    </h3>
+                    {appState.generatedDescription && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(appState.generatedDescription || "");
+                          alert("Description copied to clipboard!");
+                        }}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg button-press"
+                      >
+                        📋 Copy
+                      </button>
+                    )}
+                  </div>
+
+                  {appState.isGeneratingDescription ? (
+                    <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                      <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      <span>Generating description from reviews...</span>
+                    </div>
+                  ) : appState.generatedDescription ? (
+                    <div className="prose dark:prose-invert max-w-none">
+                      <pre className="whitespace-pre-wrap font-sans text-gray-700 dark:text-gray-300 text-sm leading-relaxed bg-gray-50 dark:bg-gray-900 p-4 rounded-xl overflow-auto max-h-96">
+                        {appState.generatedDescription}
+                      </pre>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Failed to generate description. Please try again.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="text-center pt-6">
-              <button
-                onClick={resetApp}
-                className="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-xl button-press"
-              >
-                🔄 Extract Another Place
-              </button>
+                <button
+                  onClick={resetApp}
+                  className="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-xl button-press"
+                >
+                  🔄 Extract Another Place
+                </button>
               </div>
             </div>
           )}

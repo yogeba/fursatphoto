@@ -1,4 +1,4 @@
-import { PlaceCoordinates, PlacePhoto } from "@/types/maps";
+import { PlaceCoordinates } from "@/types/maps";
 
 export function extractLatLng(url: string): PlaceCoordinates | null {
   const match = url.match(/@([-0-9.]+),([-0-9.]+)/);
