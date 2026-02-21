@@ -14,14 +14,8 @@ import PropertyDetailsForm from "@/components/PropertyDetailsForm";
 import JSZip from "jszip";
 
 const STORAGE_KEY = "fursatphoto_generate_description";
-const AUTH_KEY = "fursatphoto_auth";
-const PASSWORD = "fursat2024";
 
 export default function Home() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
-
   const [appState, setAppState] = useState<AppState>({
     isLoading: false,
     loadingMessage: null,
@@ -47,30 +41,11 @@ export default function Home() {
   const [sheetSyncResult, setSheetSyncResult] = useState<SyncSheetResponse | null>(null);
   const [enableDescription, setEnableDescription] = useState(true);
 
-  // Auth check
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(AUTH_KEY);
-      if (saved === "true") setAuthenticated(true);
-    }
-  }, []);
-
   // Load description preference
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved !== null) setEnableDescription(saved === "true");
   }, []);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordInput === PASSWORD) {
-      setAuthenticated(true);
-      localStorage.setItem(AUTH_KEY, "true");
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-    }
-  };
 
   const toggleDescription = () => {
     const newValue = !enableDescription;
@@ -389,30 +364,6 @@ export default function Home() {
   };
 
   const hasResults = appState.photos.length > 0;
-
-  // Password gate
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4">
-        <form onSubmit={handleLogin} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg w-full max-w-sm">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">Fursat Photo</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center">Enter password to continue</p>
-          <input
-            type="password"
-            value={passwordInput}
-            onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
-            placeholder="Password"
-            autoFocus
-            className={`w-full px-4 py-3 border rounded-xl mb-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${passwordError ? "border-red-400" : "border-gray-300 dark:border-gray-600"}`}
-          />
-          {passwordError && <p className="text-red-500 text-sm mb-3">Incorrect password</p>}
-          <button type="submit" className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl">
-            Sign In
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
