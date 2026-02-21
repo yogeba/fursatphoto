@@ -29,7 +29,7 @@ export function extractPlaceName(url: string): string | null {
 export function generatePhotoUrl(
   photoReference: string,
   apiKey: string,
-  maxWidth: number = 1600
+  maxWidth: number = 4800
 ): string {
   return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photoreference=${photoReference}&key=${apiKey}`;
 }

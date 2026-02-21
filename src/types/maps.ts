@@ -59,9 +59,12 @@ export interface PhotoDownloadResponse {
 
 export interface AppState {
   isLoading: boolean;
+  loadingMessage: string | null;
   error: string | null;
   placeName: string | null;
+  placeId: string | null;
   photos: PlacePhoto[];
+  selectedPhotos: Set<string>;
   reviews: PlaceReview[];
   rating: number | null;
   totalReviews: number | null;
@@ -69,5 +72,4 @@ export interface AppState {
   isGeneratingDescription: boolean;
   coordinates: PlaceCoordinates | null;
   location: string | null;
-  currentStep: "input" | "loading" | "gallery" | "error";
 }

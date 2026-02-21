@@ -41,7 +41,8 @@ export async function getListingsRows(): Promise<string[][]> {
 }
 
 export async function findPropertyRow(
-  propertyName: string
+  propertyName: string,
+  googlePlaceId?: string
 ): Promise<{ rowIndex: number; rowData: Record<string, string> } | null> {
   const rows = await getListingsRows();
   if (rows.length < 2) return null;
@@ -50,20 +51,39 @@ export async function findPropertyRow(
   const propertyNameColIndex = headers.findIndex(
     (h) => h.trim().toLowerCase() === "property name"
   );
-  if (propertyNameColIndex === -1) return null;
+  const placeIdColIndex = headers.findIndex(
+    (h) => h.trim().toLowerCase() === "google place id"
+  );
 
-  const searchName = propertyName.trim().toLowerCase();
+  const buildRowData = (i: number) => {
+    const rowData: Record<string, string> = {};
+    headers.forEach((h, idx) => {
+      rowData[h] = rows[i][idx] || "";
+    });
+    return rowData;
+  };
 
-  for (let i = 1; i < rows.length; i++) {
-    const cellValue = (rows[i][propertyNameColIndex] || "").trim().toLowerCase();
-    if (cellValue === searchName) {
-      const rowData: Record<string, string> = {};
-      headers.forEach((h, idx) => {
-        rowData[h] = rows[i][idx] || "";
-      });
-      return { rowIndex: i + 1, rowData };
+  // First: match by Google Place ID (most reliable)
+  if (googlePlaceId && placeIdColIndex !== -1) {
+    for (let i = 1; i < rows.length; i++) {
+      const cellValue = (rows[i][placeIdColIndex] || "").trim();
+      if (cellValue === googlePlaceId) {
+        return { rowIndex: i + 1, rowData: buildRowData(i) };
+      }
     }
   }
+
+  // Fallback: match by Property Name (case-insensitive)
+  if (propertyNameColIndex !== -1) {
+    const searchName = propertyName.trim().toLowerCase();
+    for (let i = 1; i < rows.length; i++) {
+      const cellValue = (rows[i][propertyNameColIndex] || "").trim().toLowerCase();
+      if (cellValue === searchName) {
+        return { rowIndex: i + 1, rowData: buildRowData(i) };
+      }
+    }
+  }
+
   return null;
 }
 

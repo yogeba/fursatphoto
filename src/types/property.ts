@@ -30,6 +30,7 @@ export interface PropertyDetails {
   aiDescription: string;
   googleRating: string;
   googleReviews: string;
+  googlePlaceId: string;
   dataSource: string;
   lastEnriched: string;
   host: string;
@@ -89,6 +90,7 @@ export const SHEET_COLUMN_MAP: Record<string, string> = {
   aiDescription: "AI Description",
   googleRating: "Google Rating",
   googleReviews: "Google Reviews",
+  googlePlaceId: "Google Place ID",
   dataSource: "Data Source",
   lastEnriched: "Last Enriched",
 };

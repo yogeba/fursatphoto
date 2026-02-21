@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if property already exists
-    const existing = await findPropertyRow(propertyDetails.propertyName);
+    // Check if property already exists (by Place ID first, then name)
+    const existing = await findPropertyRow(propertyDetails.propertyName, propertyDetails.googlePlaceId);
 
     if (existing && mode === "create") {
       return NextResponse.json({
