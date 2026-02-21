@@ -29,6 +29,7 @@ export default function Home() {
     location: null,
     currentStep: "input",
   });
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -51,6 +52,7 @@ export default function Home() {
   };
 
   const handleURLSubmit = async (url: string) => {
+    setOriginalUrl(url); // Save original URL for later
     setAppState({
       isLoading: true,
       error: null,
@@ -283,6 +285,7 @@ export default function Home() {
           reviews: appState.reviews,
           coordinates: appState.coordinates,
           location: appState.location || appState.placeName,
+          googleMapsUrl: originalUrl,
           generatedDescription: appState.generatedDescription,
         }),
       });
@@ -309,6 +312,7 @@ export default function Home() {
   };
 
   const resetApp = () => {
+    setOriginalUrl(null);
     setAppState({
       isLoading: false,
       error: null,

@@ -17,6 +17,7 @@ interface PublishRequest {
     lng: number;
   };
   location: string;
+  googleMapsUrl?: string;
   generatedDescription: string;
   hostName?: string;
   hostEmail?: string;
