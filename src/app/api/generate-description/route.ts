@@ -115,7 +115,20 @@ Remember:
 - USE THE ACTUAL WORDS AND PHRASES from the reviews as much as possible - if a guest says "addictive tea" use that exact phrase, if they mention "village walk" or "range officer" include those specific terms
 - Mirror the voice and language of real guests to keep it authentic
 - Include Airbnb SEO keywords naturally: location-specific terms, property type (cottage, bungalow, guest house), nearby attractions, experience types (eco-tourism, nature stay, homestay), amenities mentioned
-- Use searchable terms guests would type: "near [landmark]", "[activity] in [region]", "family-friendly", "couples", "solo travelers", "pet-friendly" if applicable`;
+- Use searchable terms guests would type: "near [landmark]", "[activity] in [region]", "family-friendly", "couples", "solo travelers", "pet-friendly" if applicable
+
+AFTER the listing description, add a separator line "---PROPERTY_DATA---" and then output a JSON object with property details you can extract from the reviews.
+
+CRITICAL RULES for the JSON:
+- Return null for ANY field where the information is NOT clearly stated in reviews
+- Do NOT guess or hallucinate room counts, bed counts, bathroom counts, guest capacity, or pricing — these are almost NEVER reliably mentioned in reviews and will be manually entered
+- Only set wifi/hotWater/petsAllowed to true if a guest EXPLICITLY mentions using them
+- For stateCity, extract ONLY if a guest mentions the city/state/region name
+- For otherAmenities, ONLY list things guests specifically describe experiencing (e.g. "swimming pool", "bonfire area", "parking")
+- When in doubt, return null. False data is worse than no data.
+
+JSON format:
+{"totalRooms":null,"beds":null,"bathrooms":null,"guests":null,"pricingType":null,"wifi":true/false/null,"hotWater":true/false/null,"petsAllowed":true/false/null,"stateCity":"name or null","otherAmenities":"comma-separated or null"}`;
 
     // Use Gemini 2.0 Flash Lite - the cheapest model available
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`;
@@ -152,18 +165,36 @@ Remember:
       );
     }
 
-    const generatedText =
+    const rawText =
       geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    if (!generatedText) {
+    if (!rawText) {
       return NextResponse.json(
         { error: "No content generated" },
         { status: 500 }
       );
     }
 
+    // Split response: description before separator, JSON after
+    let generatedText = rawText;
+    let inferredData = null;
+    const separatorIndex = rawText.indexOf("---PROPERTY_DATA---");
+    if (separatorIndex !== -1) {
+      generatedText = rawText.substring(0, separatorIndex).trim();
+      const jsonPart = rawText.substring(separatorIndex + "---PROPERTY_DATA---".length);
+      try {
+        const jsonMatch = jsonPart.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          inferredData = JSON.parse(jsonMatch[0]);
+        }
+      } catch {
+        // Non-critical — form will use defaults
+      }
+    }
+
     return NextResponse.json({
       description: generatedText,
+      inferredData,
       model: "gemini-2.0-flash-lite",
       reviewsUsed: reviews.length,
     });

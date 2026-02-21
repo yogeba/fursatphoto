@@ -34,6 +34,8 @@ export default function Home() {
   });
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [editableDescription, setEditableDescription] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [inferredData, setInferredData] = useState<Record<string, any> | null>(null);
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -169,6 +171,7 @@ export default function Home() {
           if (descResponse.ok) {
             const descData = await descResponse.json();
             setAppState((prev) => ({ ...prev, generatedDescription: descData.description, isGeneratingDescription: false }));
+            if (descData.inferredData) setInferredData(descData.inferredData);
           } else {
             setAppState((prev) => ({ ...prev, isGeneratingDescription: false, error: "AI description generation failed — you can write one manually below." }));
           }
@@ -492,17 +495,22 @@ export default function Home() {
                   initialData={{
                     propertyName: appState.placeName || "",
                     airbnbName: appState.placeName || "",
-                    stateCity: appState.location || "",
+                    stateCity: inferredData?.stateCity || appState.location || "",
                     googleMapsLink: originalUrl || "",
                     aiDescription: editableDescription,
                     googleRating: String(appState.rating || ""),
                     googleReviews: String(appState.totalReviews || ""),
                     googlePlaceId: appState.placeId || "",
-                    checkInTime: "2:00 PM",
-                    checkoutTime: "11:00 AM",
-                    host: "fursat",
-                    dataSource: "fursatphoto",
                     lastEnriched: new Date().toISOString().split("T")[0],
+                    ...(inferredData?.totalRooms != null && { totalRooms: inferredData.totalRooms }),
+                    ...(inferredData?.beds != null && { beds: inferredData.beds }),
+                    ...(inferredData?.bathrooms != null && { bathrooms: inferredData.bathrooms }),
+                    ...(inferredData?.guests != null && { guests: inferredData.guests }),
+                    ...(inferredData?.pricingType != null && { pricingType: inferredData.pricingType }),
+                    ...(inferredData?.wifi != null && { wifi: inferredData.wifi }),
+                    ...(inferredData?.hotWater != null && { hotWater: inferredData.hotWater }),
+                    ...(inferredData?.petsAllowed != null && { petsAllowed: inferredData.petsAllowed }),
+                    ...(inferredData?.otherAmenities != null && { otherAmenities: inferredData.otherAmenities }),
                   }}
                   onSubmit={handlePublishAndSync}
                   isSubmitting={isPublishing}
