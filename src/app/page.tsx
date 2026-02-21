@@ -10,6 +10,8 @@ import {
   SearchPlaceResponse,
   PlaceDetails,
 } from "@/types/maps";
+import { PropertyDetails, SyncSheetResponse } from "@/types/property";
+import PropertyDetailsForm from "@/components/PropertyDetailsForm";
 import JSZip from "jszip";
 
 const STORAGE_KEY = "fursatphoto_generate_description";
@@ -34,6 +36,7 @@ export default function Home() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<{ success: boolean; listingId?: string; editUrl?: string; error?: string } | null>(null);
+  const [sheetSyncResult, setSheetSyncResult] = useState<SyncSheetResponse | null>(null);
   const [enableDescription, setEnableDescription] = useState(true);
 
   // Load preference from localStorage on mount
@@ -264,51 +267,52 @@ export default function Home() {
     }
   };
 
-  const handlePublishToFursat = async () => {
-    if (!appState.placeName || !appState.generatedDescription) {
-      alert("Please wait for the description to be generated before publishing.");
-      return;
-    }
-
+  const handlePublishAndSync = async (details: PropertyDetails) => {
     setIsPublishing(true);
     setPublishResult(null);
+    setSheetSyncResult(null);
 
-    try {
-      const response = await fetch("/api/publish-to-fursat", {
+    const [sheetSettled, fursatSettled] = await Promise.allSettled([
+      fetch("/api/sync-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyDetails: details, mode: "create" }),
+      }).then((r) => r.json()),
+      fetch("/api/publish-to-fursat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          placeName: appState.placeName,
+          placeName: details.propertyName,
           rating: appState.rating,
           totalReviews: appState.totalReviews,
           photos: appState.photos,
           reviews: appState.reviews,
           coordinates: appState.coordinates,
-          location: appState.location || appState.placeName,
+          location: details.stateCity || appState.location || details.propertyName,
           googleMapsUrl: originalUrl,
-          generatedDescription: appState.generatedDescription,
+          generatedDescription: details.aiDescription,
         }),
-      });
+      }).then((r) => r.json()),
+    ]);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setPublishResult({ success: false, error: data.error || "Failed to publish" });
-      } else {
-        setPublishResult({
-          success: true,
-          listingId: data.listingId,
-          editUrl: data.editUrl,
-        });
-      }
-    } catch (error) {
-      setPublishResult({
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to publish",
-      });
-    } finally {
-      setIsPublishing(false);
+    if (sheetSettled.status === "fulfilled") {
+      setSheetSyncResult(sheetSettled.value);
+    } else {
+      setSheetSyncResult({ success: false, action: "created", error: sheetSettled.reason?.message || "Sheet sync failed" });
     }
+
+    if (fursatSettled.status === "fulfilled") {
+      const data = fursatSettled.value;
+      if (data.error) {
+        setPublishResult({ success: false, error: data.error });
+      } else {
+        setPublishResult({ success: true, listingId: data.listingId, editUrl: data.editUrl });
+      }
+    } else {
+      setPublishResult({ success: false, error: fursatSettled.reason?.message || "Publish failed" });
+    }
+
+    setIsPublishing(false);
   };
 
   const resetApp = () => {
@@ -328,6 +332,7 @@ export default function Home() {
       currentStep: "input",
     });
     setPublishResult(null);
+    setSheetSyncResult(null);
   };
 
   return (
@@ -475,76 +480,30 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Publish to Fursat Section */}
+              {/* Property Details & Publish Section */}
               {appState.generatedDescription && (
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 shadow-lg">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="text-white">
-                      <h3 className="text-xl font-bold mb-1">
-                        Publish to Fursat.fun
-                      </h3>
-                      <p className="text-purple-100 text-sm">
-                        Create a draft listing on Fursat.fun with all the photos and generated description
-                      </p>
-                    </div>
-                    <button
-                      onClick={handlePublishToFursat}
-                      disabled={isPublishing || publishResult?.success}
-                      className={`px-6 py-3 font-medium rounded-xl button-press flex items-center gap-2 ${
-                        publishResult?.success
-                          ? "bg-green-500 text-white cursor-default"
-                          : isPublishing
-                          ? "bg-white/50 text-purple-700 cursor-wait"
-                          : "bg-white text-purple-700 hover:bg-purple-50"
-                      }`}
-                    >
-                      {isPublishing ? (
-                        <>
-                          <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
-                          <span>Publishing...</span>
-                        </>
-                      ) : publishResult?.success ? (
-                        <>
-                          <span>Published</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Publish to Fursat</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Publish Result */}
-                  {publishResult && (
-                    <div className={`mt-4 p-4 rounded-xl ${
-                      publishResult.success
-                        ? "bg-green-500/20 text-white"
-                        : "bg-red-500/20 text-white"
-                    }`}>
-                      {publishResult.success ? (
-                        <div>
-                          <p className="font-medium mb-2">Listing created successfully!</p>
-                          <p className="text-sm text-purple-100">
-                            Your draft listing has been created. You can edit it on Fursat.fun.
-                          </p>
-                          {publishResult.editUrl && (
-                            <a
-                              href={`${process.env.NEXT_PUBLIC_FURSAT_URL || 'http://localhost:3001'}${publishResult.editUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-block mt-2 px-4 py-2 bg-white text-purple-700 font-medium rounded-lg hover:bg-purple-50"
-                            >
-                              Edit Listing
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="font-medium">Error: {publishResult.error}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <PropertyDetailsForm
+                  initialData={{
+                    propertyName: appState.placeName || "",
+                    airbnbName: appState.placeName || "",
+                    stateCity: appState.location || "",
+                    googleMapsLink: originalUrl || "",
+                    aiDescription: appState.generatedDescription,
+                    googleRating: String(appState.rating || ""),
+                    googleReviews: String(appState.totalReviews || ""),
+                    checkInTime: "2:00 PM",
+                    checkoutTime: "11:00 AM",
+                    host: "fursat",
+                    dataSource: "fursatphoto",
+                    lastEnriched: new Date().toISOString().split("T")[0],
+                  }}
+                  onSubmit={handlePublishAndSync}
+                  isSubmitting={isPublishing}
+                  submitResult={{
+                    sheetResult: sheetSyncResult,
+                    publishResult: publishResult,
+                  }}
+                />
               )}
 
               <div className="text-center pt-6">
