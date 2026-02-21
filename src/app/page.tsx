@@ -206,6 +206,7 @@ export default function Home() {
       if (descResponse.ok) {
         const descData = await descResponse.json();
         setAppState((prev) => ({ ...prev, generatedDescription: descData.description, isGeneratingDescription: false }));
+        if (descData.inferredData) setInferredData(descData.inferredData);
       } else {
         setAppState((prev) => ({ ...prev, isGeneratingDescription: false }));
       }
@@ -490,7 +491,7 @@ export default function Home() {
               )}
 
               {/* Property details + publish */}
-              {(editableDescription || !enableDescription) && (
+              {(editableDescription || !enableDescription) && !appState.isGeneratingDescription && (
                 <PropertyDetailsForm
                   initialData={{
                     propertyName: appState.placeName || "",

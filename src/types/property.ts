@@ -82,7 +82,7 @@ export const SHEET_COLUMN_MAP: Record<string, string> = {
   aiDescription: "AI Description",
   googleRating: "Google Rating",
   googleReviews: "Google Reviews",
-  googlePlaceId: "Google Place ID",
+  googlePlaceId: "Property ID ",
   lastEnriched: "Last Enriched",
   cancellationPolicy: "Cancellation Policy",
   upiId: "UPI ID ",

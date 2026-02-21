@@ -62,11 +62,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error publishing to Fursat:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const hint = message.includes("fetch failed")
+      ? "Fursat.fun API is unreachable. Check FURSAT_API_URL env var."
+      : message;
     return NextResponse.json(
-      {
-        error: "Failed to publish to Fursat",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: `Publish failed: ${hint}` },
       { status: 500 }
     );
   }

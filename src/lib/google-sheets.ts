@@ -52,7 +52,7 @@ export async function findPropertyRow(
     (h) => h.trim().toLowerCase() === "property name"
   );
   const placeIdColIndex = headers.findIndex(
-    (h) => h.trim().toLowerCase() === "google place id"
+    (h) => h.trim().toLowerCase() === "property id"
   );
 
   const buildRowData = (i: number) => {
@@ -93,15 +93,18 @@ export async function appendListingRow(
   const rows = await getListingsRows();
   const headers = rows[0] || [];
   const newRow = headers.map((h) => values[h] || "");
+  const newRowIndex = rows.length + 1;
 
   const sheets = getSheetsClient();
-  await sheets.spreadsheets.values.append({
+  const lastCol = columnToLetter(headers.length);
+  // Use update at specific row to avoid append going to wrong column
+  await sheets.spreadsheets.values.update({
     spreadsheetId: getSpreadsheetId(),
-    range: "Listings",
+    range: `Listings!A${newRowIndex}:${lastCol}${newRowIndex}`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [newRow] },
   });
-  return rows.length + 1;
+  return newRowIndex;
 }
 
 function columnToLetter(col: number): string {

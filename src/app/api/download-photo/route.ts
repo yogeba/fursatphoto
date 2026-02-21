@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const photoUrl = generatePhotoUrl(photoReference, apiKey, preview === "true" ? 400 : 1600);
+    const photoUrl = generatePhotoUrl(photoReference, apiKey, preview === "true" ? 400 : 4800);
 
     // Fetch the image
     const imageResponse = await fetch(photoUrl);

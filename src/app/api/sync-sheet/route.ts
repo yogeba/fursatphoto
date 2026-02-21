@@ -11,11 +11,14 @@ export async function POST(request: NextRequest) {
     const { propertyDetails, mode } = await request.json();
 
     // Build column-name → value map for the sheet
+    // Write empty string for unfilled numeric fields (0) to avoid false data
     const sheetValues: Record<string, string> = {};
     for (const [key, colName] of Object.entries(SHEET_COLUMN_MAP)) {
       const value = (propertyDetails as Record<string, unknown>)[key];
       if (typeof value === "boolean") {
         sheetValues[colName] = value ? "Yes" : "No";
+      } else if (typeof value === "number") {
+        sheetValues[colName] = value === 0 ? "" : String(value);
       } else {
         sheetValues[colName] = String(value ?? "");
       }

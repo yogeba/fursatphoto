@@ -37,16 +37,16 @@ export default function PropertyDetailsForm({
     googleMapsLink: initialData.googleMapsLink || "",
     stateCity: initialData.stateCity || "",
     contactNumber: initialData.contactNumber || "",
-    totalRooms: initialData.totalRooms || 1,
-    bathrooms: initialData.bathrooms || 1,
-    beds: initialData.beds || 1,
-    guests: initialData.guests || 2,
+    totalRooms: initialData.totalRooms ?? 0,
+    bathrooms: initialData.bathrooms ?? 0,
+    beds: initialData.beds ?? 0,
+    guests: initialData.guests ?? 0,
     pricingType: initialData.pricingType || "Room Wise",
-    costPrice: initialData.costPrice || 0,
-    sellingPrice: initialData.sellingPrice || 0,
-    extraGuestPriceAfter: initialData.extraGuestPriceAfter || 2,
-    extraGuestPrice: initialData.extraGuestPrice || 0,
-    petFee: initialData.petFee || 0,
+    costPrice: initialData.costPrice ?? 0,
+    sellingPrice: initialData.sellingPrice ?? 0,
+    extraGuestPriceAfter: initialData.extraGuestPriceAfter ?? 0,
+    extraGuestPrice: initialData.extraGuestPrice ?? 0,
+    petFee: initialData.petFee ?? 0,
     essentials: initialData.essentials ?? true,
     wifi: initialData.wifi ?? true,
     hotWater: initialData.hotWater ?? true,
@@ -72,6 +72,10 @@ export default function PropertyDetailsForm({
     });
   };
 
+  // For number inputs: show empty string when value is 0 (unfilled), write "" to sheet
+  const numDisplay = (val: number) => (val === 0 ? "" : String(val));
+  const numParse = (str: string) => parseInt(str) || 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(form);
@@ -80,6 +84,7 @@ export default function PropertyDetailsForm({
   const sheetResult = submitResult?.sheetResult;
   const publishResult = submitResult?.publishResult;
   const hasResult = sheetResult || publishResult;
+  const allSuccess = !!sheetResult?.success && !!publishResult?.success;
 
   const pricingLabel = form.pricingType === "Per Person" ? "/person" : form.pricingType === "Room Wise" ? "/room" : "/property";
 
@@ -103,29 +108,34 @@ export default function PropertyDetailsForm({
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Rooms</label>
-              <input type="number" min={0} value={form.totalRooms} onChange={(e) => update("totalRooms", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.totalRooms)} placeholder="-"
+                onChange={(e) => update("totalRooms", numParse(e.target.value))}
                 className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Beds</label>
-              <input type="number" min={0} value={form.beds} onChange={(e) => update("beds", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.beds)} placeholder="-"
+                onChange={(e) => update("beds", numParse(e.target.value))}
                 className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Guests</label>
-              <input type="number" min={1} value={form.guests} onChange={(e) => update("guests", parseInt(e.target.value) || 1)}
+              <input type="number" min={0} value={numDisplay(form.guests)} placeholder="-"
+                onChange={(e) => update("guests", numParse(e.target.value))}
                 className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cost {pricingLabel}</label>
-              <input type="number" min={0} value={form.costPrice} onChange={(e) => update("costPrice", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.costPrice)} placeholder="-"
+                onChange={(e) => update("costPrice", numParse(e.target.value))}
                 className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sell (+50%)</label>
-              <input type="number" min={0} value={form.sellingPrice} onChange={(e) => update("sellingPrice", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.sellingPrice)} placeholder="-"
+                onChange={(e) => update("sellingPrice", numParse(e.target.value))}
                 className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
           </div>
@@ -170,22 +180,26 @@ export default function PropertyDetailsForm({
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Bathrooms</label>
-              <input type="number" min={0} value={form.bathrooms} onChange={(e) => update("bathrooms", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.bathrooms)} placeholder="-"
+                onChange={(e) => update("bathrooms", numParse(e.target.value))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Extra Guest Price After</label>
-              <input type="number" min={0} value={form.extraGuestPriceAfter} onChange={(e) => update("extraGuestPriceAfter", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.extraGuestPriceAfter)} placeholder="-"
+                onChange={(e) => update("extraGuestPriceAfter", numParse(e.target.value))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Extra Guest Price</label>
-              <input type="number" min={0} value={form.extraGuestPrice} onChange={(e) => update("extraGuestPrice", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.extraGuestPrice)} placeholder="-"
+                onChange={(e) => update("extraGuestPrice", numParse(e.target.value))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Pet Fee</label>
-              <input type="number" min={0} value={form.petFee} onChange={(e) => update("petFee", parseInt(e.target.value) || 0)}
+              <input type="number" min={0} value={numDisplay(form.petFee)} placeholder="-"
+                onChange={(e) => update("petFee", numParse(e.target.value))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
@@ -221,12 +235,12 @@ export default function PropertyDetailsForm({
           </div>
           <button
             type="submit"
-            disabled={isSubmitting || (!!sheetResult?.success && !!publishResult?.success)}
+            disabled={isSubmitting}
             className={`px-5 py-2.5 font-medium rounded-xl flex items-center gap-2 whitespace-nowrap text-sm ${
-              sheetResult?.success && publishResult?.success
-                ? "bg-green-500 text-white cursor-default"
-                : isSubmitting
+              isSubmitting
                 ? "bg-white/50 text-purple-700 cursor-wait"
+                : allSuccess
+                ? "bg-green-500 text-white hover:bg-green-600"
                 : "bg-white text-purple-700 hover:bg-purple-50"
             }`}
           >
@@ -235,8 +249,10 @@ export default function PropertyDetailsForm({
                 <div className="animate-spin w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full"></div>
                 Publishing...
               </>
-            ) : sheetResult?.success && publishResult?.success ? (
-              "Published & Synced"
+            ) : allSuccess ? (
+              "Re-publish & Sync"
+            ) : hasResult ? (
+              "Retry"
             ) : (
               "Publish & Sync"
             )}
