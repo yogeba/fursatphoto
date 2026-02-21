@@ -69,7 +69,14 @@ export default function PropertyDetailsForm({
   });
 
   const update = (field: keyof PropertyDetails, value: string | number | boolean) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // Auto-calculate selling price as base price + 50%
+      if (field === "basePrice" && typeof value === "number") {
+        next.sellingPrice = Math.round(value * 1.5);
+      }
+      return next;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -115,10 +122,17 @@ export default function PropertyDetailsForm({
                 className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Selling Price</label>
-            <input type="number" min={0} value={form.sellingPrice} onChange={(e) => update("sellingPrice", parseInt(e.target.value) || 0)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cost Price</label>
+              <input type="number" min={0} value={form.basePrice} onChange={(e) => update("basePrice", parseInt(e.target.value) || 0)}
+                className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sell (+50%)</label>
+              <input type="number" min={0} value={form.sellingPrice} onChange={(e) => update("sellingPrice", parseInt(e.target.value) || 0)}
+                className="w-full px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+            </div>
           </div>
         </div>
 
@@ -143,7 +157,7 @@ export default function PropertyDetailsForm({
         <svg className={`w-4 h-4 transition-transform ${expanded ? "rotate-90" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="9,18 15,12 9,6" />
         </svg>
-        {expanded ? "Hide" : "Show"} advanced details (pricing, timings, parking, rules...)
+        {expanded ? "Hide" : "Show"} advanced details (timings, parking, rules...)
       </button>
 
       {expanded && (
@@ -157,11 +171,6 @@ export default function PropertyDetailsForm({
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">State / City</label>
               <input type="text" value={form.stateCity} onChange={(e) => update("stateCity", e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Base Price</label>
-              <input type="number" min={0} value={form.basePrice} onChange={(e) => update("basePrice", parseInt(e.target.value) || 0)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
             <div>
