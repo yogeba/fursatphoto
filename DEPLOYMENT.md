@@ -1,99 +1,95 @@
 # Deployment Guide
 
-## Environment Variables
+## Vercel (Production)
 
-Create a `.env.local` file in the root directory with the following variables:
+The app is deployed at [fursatphoto.vercel.app](https://fursatphoto.vercel.app). Pushes to `main` auto-deploy.
 
-```env
-# Google Maps API Key
-# Get your API key from: https://console.cloud.google.com/google/maps-apis
-GOOGLE_MAPS_API_KEY=your_api_key_here
+### Environment Variables
 
-# For client-side photo display (optional)
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+Set all of these in Vercel → Project → Settings → Environment Variables:
+
+| Variable | Description | Where to get it |
+|----------|-------------|-----------------|
+| `GOOGLE_MAPS_API_KEY` | Google Places API key | [Google Cloud Console](https://console.cloud.google.com/google/maps-apis) → Credentials |
+| `GEMINI_API_KEY` | Gemini AI API key | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `GOOGLE_CREDENTIALS_JSON` | Base64-encoded service account JSON | Google Cloud → IAM → Service Accounts → Keys → JSON → base64 encode |
+| `SPREADSHEET_ID` | Google Sheets document ID | From the sheet URL: `docs.google.com/spreadsheets/d/{THIS_PART}/edit` |
+| `FURSAT_API_URL` | Fursat.fun API base URL | e.g. `https://fursat.fun` |
+| `FURSATPHOTO_API_KEY` | API key for Fursat.fun import | Get from Fursat.fun admin |
+
+### Base64 Encode Service Account
+
+```bash
+# Download service account JSON from Google Cloud Console, then:
+base64 -i service-account.json | tr -d '\n'
+# Paste the output as GOOGLE_CREDENTIALS_JSON
 ```
 
-## Vercel Deployment
+## Google Cloud Setup
 
-1. **Push to GitHub:**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
+### Required APIs
 
-2. **Connect to Vercel:**
-   - Go to [vercel.com](https://vercel.com)
-   - Sign in with GitHub
-   - Click "New Project"
-   - Import your repository
+Enable these in Google Cloud Console → APIs & Services → Library:
 
-3. **Configure Environment Variables:**
-   - In Vercel dashboard, go to your project
-   - Go to Settings > Environment Variables
-   - Add the following variables:
-     - `GOOGLE_MAPS_API_KEY` = your Google Maps API key
-     - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` = your Google Maps API key
+1. **Places API** — for photo extraction, reviews, place search
+2. **Sheets API** — for reading/writing the Listings sheet
 
-4. **Deploy:**
-   - Click "Deploy"
-   - Your app will be available at `https://your-project-name.vercel.app`
+### Service Account Permissions
 
-## Google Maps API Setup
+The service account needs:
+- **Editor** access to the Listings Google Sheet (share the sheet with the service account email)
+- No other permissions needed
 
-1. **Create a Google Cloud Project:**
-   - Go to [Google Cloud Console](https://console.cloud.google.com)
-   - Create a new project or select existing one
+### API Key Restrictions (Recommended)
 
-2. **Enable APIs:**
-   - Go to "APIs & Services" > "Library"
-   - Enable the following APIs:
-     - Places API
-     - Maps JavaScript API
+For `GOOGLE_MAPS_API_KEY`:
+- Application restrictions: HTTP referrers → `fursatphoto.vercel.app/*`
+- API restrictions: Places API only
 
-3. **Create API Key:**
-   - Go to "APIs & Services" > "Credentials"
-   - Click "Create Credentials" > "API Key"
-   - Copy the API key
+## Google Sheet Requirements
 
-4. **Restrict API Key (Recommended):**
-   - Click on your API key
-   - Under "Application restrictions", select "HTTP referrers"
-   - Add your domain (e.g., `https://your-project-name.vercel.app/*`)
-   - Under "API restrictions", select "Restrict key"
-   - Choose "Places API" and "Maps JavaScript API"
+The Listings sheet must have these exact column headers in row 1 (some have trailing spaces):
+
+```
+Property Name | Property ID  | State/City | Google Maps Link | Contact Number |
+Airbnb Name  | Total Rooms | Bathroom  | Beds | Guests | Pricing Type |
+Cost Price  | Selling Price | Extra Guest Price applies after  | Extra Guest Price |
+Pet Fee | Airbnb Link | Essentials | Wifi | Hot Water | Pets Allowed |
+Any other amenities | Google Rating | Google Reviews | AI Description |
+Last Enriched | Cancellation Policy | UPI ID
+```
+
+The trailing spaces on some column names (e.g., `"Property ID "`, `"Cost Price "`) are intentional — the code matches them exactly.
 
 ## Local Development
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+# Install dependencies
+npm install
 
-2. **Set up environment variables:**
-   - Copy `.env.local` and add your API key
+# Copy env vars (same as Vercel, in .env.local)
+cp .env.example .env.local  # edit with your values
 
-3. **Run development server:**
-   ```bash
-   npm run dev
-   ```
+# Run dev server
+npm run dev
 
-4. **Open browser:**
-   - Navigate to [http://localhost:3000](http://localhost:3000)
+# Build for production
+npm run build
+```
 
 ## Troubleshooting
 
-### Build Errors
-- Make sure all environment variables are set
-- Check that your Google Maps API key is valid
-- Ensure the Places API is enabled in Google Cloud Console
+### "Could not parse this URL"
+The URL must be a full Google Maps place URL from the browser address bar containing `/place/` and `@coordinates`. Shortened links (`maps.app.goo.gl`) cannot be resolved server-side.
 
-### Runtime Errors
-- Check browser console for client-side errors
-- Check Vercel function logs for server-side errors
-- Verify API key restrictions allow your domain
+### Sheet sync creates duplicate rows
+Check that the "Property ID " column (column B) exists in your sheet with that exact name (including trailing space). Dedup matches by this column first.
 
-### Photo Download Issues
-- Ensure the Places API has photo access enabled
-- Check that the place has photos available
-- Verify API quotas haven't been exceeded
+### Photos not downloading
+Verify the Places API is enabled and the API key hasn't exceeded quotas. Google limits to 10 photos per place.
+
+### AI description fails
+Check that `GEMINI_API_KEY` is set and valid. The app uses `gemini-2.0-flash-lite` (cheapest model).
+
+### Fursat publish fails with "API unreachable"
+Set `FURSAT_API_URL` to the production Fursat.fun URL (not localhost). Also verify `FURSATPHOTO_API_KEY` is correct.
