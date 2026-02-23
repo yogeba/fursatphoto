@@ -104,6 +104,7 @@ async function sendTemplate(
   const cleanDest = destination.replace(/[\s+\-()]/g, "");
 
   const formData = new URLSearchParams({
+    channel: "whatsapp",
     source: sourceNumber,
     destination: cleanDest,
     "src.name": appName,
