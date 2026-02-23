@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const url = "https://maps.googleapis.com/maps/api/place/details/json";
     const params = new URLSearchParams({
       place_id: placeId,
-      fields: "name,photos,reviews,rating,user_ratings_total",
+      fields: "name,photos,reviews,rating,user_ratings_total,formatted_phone_number,international_phone_number,website",
       key: apiKey,
     });
 

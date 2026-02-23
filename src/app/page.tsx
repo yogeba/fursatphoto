@@ -31,6 +31,8 @@ export default function Home() {
     isGeneratingDescription: false,
     coordinates: null,
     location: null,
+    phoneNumber: null,
+    website: null,
   });
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [editableDescription, setEditableDescription] = useState("");
@@ -79,6 +81,8 @@ export default function Home() {
       isGeneratingDescription: false,
       coordinates: null,
       location: null,
+      phoneNumber: null,
+      website: null,
     });
     setPublishResult(null);
     setSheetSyncResult(null);
@@ -152,6 +156,8 @@ export default function Home() {
         isGeneratingDescription: enableDescription && (detailsData.reviews?.length ?? 0) > 0,
         coordinates: extractData.coordinates,
         location: extractData.placeName,
+        phoneNumber: detailsData.international_phone_number || detailsData.formatted_phone_number || null,
+        website: detailsData.website || null,
       });
 
       // Step 4: Generate description (async)
@@ -362,6 +368,8 @@ export default function Home() {
       isGeneratingDescription: false,
       coordinates: null,
       location: null,
+      phoneNumber: null,
+      website: null,
     });
     setPublishResult(null);
     setSheetSyncResult(null);
@@ -501,6 +509,7 @@ export default function Home() {
                     aiDescription: editableDescription,
                     googleRating: String(appState.rating || ""),
                     googleReviews: String(appState.totalReviews || ""),
+                    contactNumber: appState.phoneNumber || "",
                     googlePlaceId: appState.placeId || "",
                     lastEnriched: new Date().toISOString().split("T")[0],
                     ...(inferredData?.totalRooms != null && { totalRooms: inferredData.totalRooms }),

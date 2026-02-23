@@ -24,6 +24,9 @@ export interface PlaceDetails {
   reviews?: PlaceReview[];
   rating?: number;
   user_ratings_total?: number;
+  formatted_phone_number?: string;
+  international_phone_number?: string;
+  website?: string;
 }
 
 export interface GoogleMapsResponse {
@@ -72,4 +75,6 @@ export interface AppState {
   isGeneratingDescription: boolean;
   coordinates: PlaceCoordinates | null;
   location: string | null;
+  phoneNumber: string | null;
+  website: string | null;
 }

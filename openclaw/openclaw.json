@@ -1,0 +1,29 @@
+{
+  "tools": {
+    "policy": {
+      "deny": ["group:automation", "group:runtime", "group:fs", "sessions_spawn", "sessions_send"]
+    },
+    "browser": {
+      "allowedUrls": [
+        "https://www.google.com/maps/*",
+        "https://maps.google.com/*",
+        "https://www.airbnb.com/*",
+        "https://www.airbnb.co.in/*",
+        "https://www.booking.com/*",
+        "https://www.agoda.com/*",
+        "https://fursatphoto.vercel.app/*"
+      ]
+    },
+    "fs": {
+      "workspaceOnly": true
+    }
+  },
+  "sandbox": {
+    "scope": "session"
+  },
+  "gateway": {
+    "auth": {
+      "mode": "token"
+    }
+  }
+}
