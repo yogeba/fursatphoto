@@ -21,16 +21,44 @@ All API calls go to: `https://fursatphoto.vercel.app`
 
 When given a market (e.g., "Kasol", "Manali", "Rishikesh"), execute these steps:
 
+### Step 0: Load Existing Properties
+
+Before researching, fetch the current property list to avoid duplicates:
+
+```
+GET https://fursatphoto.vercel.app/api/list-properties
+```
+
+Response: `{ count: 145, properties: [{ propertyName, placeId, airbnbName, airbnbLink, stateCity }] }`
+
+Store this list. When you find a property in Steps 1-2, check if its name (case-insensitive) already exists in this list. If yes, **skip it** — it's already onboarded. Log it as "Already in sheet: {name}".
+
 ### Step 1: Research Properties
 
 1. Open Google Maps in the browser
-2. Search for: `resorts in {market}`, `cottages in {market}`, `homestays in {market}`, `villas in {market}`
-3. For each search, scroll through results and extract:
+2. Search for: `resorts in {market}`, `homestays in {market}`, `cottages in {market}`, `retreats in {market}`, `stays in {market}`, `guest house in {market}`, `villas in {market}`
+3. For each search, scroll through ALL results (not just the first few) and extract:
    - Property name
    - Google Maps URL (full URL from address bar, must contain `/place/` and `@coordinates`)
    - Phone number (from the Maps sidebar — critical for WhatsApp)
    - Rating and review count
+   - Property type (Lodge, Home Stay, Guest house, Resort, etc.)
 4. Collect all unique properties (deduplicate by name)
+5. Filter out results that are NOT actually in the target market (Google Maps expands search radius for thin markets — only keep properties genuinely located in/near the market)
+
+### Step 1b: Contact Enrichment
+
+For every property that has NO phone number from Google Maps:
+
+1. Search Google: `"{property name}" {market} contact number`
+2. Search Facebook: `{property name} {market}` — Facebook pages for Indian homestays almost always have the phone number in the "About" section
+3. Search Instagram: `{property name}` — check bio for WhatsApp number or phone
+4. Check Justdial: `{property name} {market}` — Justdial lists most Indian businesses with phone numbers
+5. Check travel blogs/directories: search `{property name} {market}` — sites like WhatsUpInIndia, atstura.com, Thrillophilia often list owner contacts
+
+Extract any phone number, WhatsApp number, Facebook page URL, or Instagram handle found. A phone number is the priority — without it, we can't send WhatsApp.
+
+If no contact is found after all searches, mark the property as "no contact — manual outreach needed."
 
 ### Step 2: OTA Check
 

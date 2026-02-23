@@ -1,0 +1,36 @@
+{
+  "market": "Wari Chora",
+  "state": "Meghalaya",
+  "discoveredAt": "2026-02-23",
+  "searchKeywords": ["resorts", "homestays", "cottages", "retreats", "stays", "guest house", "villas"],
+  "source": "Google Maps manual search",
+  "properties": [
+    {"name": "Wari Chora Homestay", "rating": 4.5, "reviews": 400, "phone": "918132913510", "type": "Lodge", "placeId": "ChIJxdiRpDufVzcR0QYc1HJdwww", "onboarded": true, "sheetRow": 220},
+    {"name": "ChiRikkam Homestay", "rating": 4.8, "reviews": 91, "phone": "918837402596", "type": "Home Stay", "placeId": null},
+    {"name": "Bugakol Homestay, Baghmara", "rating": 4.8, "reviews": 105, "phone": "918132013809", "type": "Home Stay", "placeId": null},
+    {"name": "Warichora Homestay and Rooms Meghalaya", "rating": 4.3, "reviews": 6, "phone": "919015037679", "type": "Guest house", "placeId": null},
+    {"name": "Wari Chora Chonseng Homestay", "rating": 4.7, "reviews": 7, "phone": "919378047371", "type": "Home Stay", "placeId": "ChIJ5ZCobAqfVzcR0sHN95V1X2c"},
+    {"name": "Ganching Home Stay", "rating": 4.2, "reviews": 34, "phone": "919362015050", "type": "Home Stay", "placeId": null},
+    {"name": "Hadura Home Stay", "rating": 4.9, "reviews": 9, "phone": null, "type": "Home Stay", "placeId": null},
+    {"name": "Do.amek Resort", "rating": 4.6, "reviews": 9, "phone": null, "type": "Home Stay", "placeId": null},
+    {"name": "Wari Chora Best Campsite BS Manda Homestay", "rating": 4.2, "reviews": 41, "phone": "919862679162", "type": "Home Stay", "placeId": "ChIJvQkTHaifVzcRURSLq8IZHvM"},
+    {"name": "Sarangdu Homestay", "rating": 4.9, "reviews": 23, "phone": "917005663122", "type": "Home Stay", "placeId": null},
+    {"name": "Chegra Guest House", "rating": 4.3, "reviews": 32, "phone": null, "type": "Home Stay", "placeId": null, "note": "On Booking.com + Justdial + MakeMyTrip — phone behind Justdial paywall", "onOTA": true},
+    {"name": "Tyimong Home Stay", "rating": 4.4, "reviews": 57, "phone": "917005709613", "type": "Home Stay", "placeId": null},
+    {"name": "Vishal Homestay, Warichora", "rating": 4.3, "reviews": 12, "phone": "918798510379", "type": "Home Stay", "placeId": null, "phoneSource": "Justdial guide contact"},
+    {"name": "House of Mercy", "rating": 4.7, "reviews": 20, "phone": null, "type": "Home Stay", "placeId": null},
+    {"name": "Wari Chora Guest House", "rating": null, "reviews": 0, "phone": null, "type": "Home Stay", "placeId": null},
+    {"name": "Simsang Nok Achik Homestay", "rating": 4.7, "reviews": 14, "phone": "918118904834", "type": "Home Stay", "placeId": null, "phoneSource": "atstura.com — possibly Aginma Campsite, Mr. Hagai Momin"},
+    {"name": "Wari Chora Sengsrame Rural Resort", "rating": 4.4, "reviews": 8, "phone": null, "type": "Tourist attraction", "placeId": null},
+    {"name": "Mongri Homestay", "rating": 4.5, "reviews": 22, "phone": "916009078046", "type": "Home Stay", "placeId": null},
+    {"name": "Rema Homestay, Emangre", "rating": 4.6, "reviews": 25, "phone": "919362013629", "type": "Home Stay", "placeId": null},
+    {"name": "Giovana Resort", "rating": 4.2, "reviews": 6, "phone": null, "type": "Home Stay", "placeId": null},
+    {"name": "DOMESAL Homestay", "rating": 5.0, "reviews": 4, "phone": null, "type": "Home Stay", "placeId": null}
+  ],
+  "summary": {
+    "total": 21,
+    "withPhone": 13,
+    "withoutPhone": 8,
+    "onboarded": 1
+  }
+}

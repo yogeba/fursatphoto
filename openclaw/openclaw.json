@@ -5,12 +5,15 @@
     },
     "browser": {
       "allowedUrls": [
-        "https://www.google.com/maps/*",
+        "https://www.google.com/*",
         "https://maps.google.com/*",
         "https://www.airbnb.com/*",
         "https://www.airbnb.co.in/*",
         "https://www.booking.com/*",
         "https://www.agoda.com/*",
+        "https://www.facebook.com/*",
+        "https://www.instagram.com/*",
+        "https://www.justdial.com/*",
         "https://fursatphoto.vercel.app/*"
       ]
     },

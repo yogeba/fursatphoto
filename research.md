@@ -37,6 +37,22 @@ You:        Sleep
 
 **Time per property: ~0. Airbnb at human pace: 10-15 min/listing automated.**
 
+## Data Architecture
+
+```
+MongoDB (source of truth) ← machine-led, all automation reads/writes here
+    ↕ sync
+Google Sheets (human frontend) ← for humans to read, edit, override
+    ↕ sync
+Fursat.fun / Airbnb / OTAs ← guest-facing display
+```
+
+**MongoDB** is the authoritative data store. All automated pipelines (OpenClaw, fursatphoto APIs, FursatAgent) read from and write to MongoDB. The `Listing` collection in `test1` database holds 248 properties with full schema (title, stayName, location, pricing, amenities, photos, beds24 integration).
+
+**Google Sheets** is the human-readable frontend. Operations team reads it, edits pricing, adds notes. Changes in Sheets sync to MongoDB via `sync-sheets-to-mongodb.ts`. Changes from automation sync to Sheets via `sync-sheet` API.
+
+**Dedup** spans both sources. `GET /api/list-properties` queries Sheet AND MongoDB in parallel, merges by name (case-insensitive), and returns combined list with `source: "sheet" | "mongodb" | "both"`.
+
 ## What's Already Built (fursatphoto)
 
 All code lives in one repo: `fursatphoto`. Deployed at `fursatphoto.vercel.app`.
@@ -56,6 +72,7 @@ All code lives in one repo: `fursatphoto`. Deployed at `fursatphoto.vercel.app`.
 | `POST /api/send-whatsapp` | Send Gupshup WhatsApp template (single or bulk) |
 | `POST /api/whatsapp-webhook` | Receive inbound WhatsApp replies from Gupshup |
 | `GET /api/whatsapp-webhook` | Debug — view last 20 inbound messages |
+| `GET /api/list-properties` | Dedup — returns all properties from Sheet + MongoDB merged |
 
 ### Orchestrator: `POST /api/onboard-property`
 
@@ -129,10 +146,12 @@ Activate: `ln -s ~/Code/fursatphoto/openclaw ~/.openclaw/skills/fursat-onboard`
 | `SPREADSHEET_ID` | Google Sheet ID | ✅ Set |
 | `FURSAT_API_URL` | Fursat.fun API base | ✅ Set |
 | `FURSATPHOTO_API_KEY` | Fursat.fun import key | ✅ Set |
-| `GUPSHUP_API_KEY` | Gupshup WhatsApp API | ⏳ Need to add |
-| `GUPSHUP_APP_NAME` | Gupshup app name | ⏳ Need to add |
-| `GUPSHUP_SOURCE_NUMBER` | Registered WhatsApp number | ⏳ Need to add |
-| `GUPSHUP_TEMPLATE_ID` | Approved template ID | ⏳ Template pending approval |
+| `DATABASE_URL` | MongoDB connection (fursat.fun `test1` db) | ✅ Set |
+| `GUPSHUP_API_KEY` | Gupshup WhatsApp API (`sk_6ebb...6104`) | ✅ Set locally, ⏳ Vercel |
+| `GUPSHUP_APP_NAME` | Gupshup app name (`FursatFun`) | ✅ Set locally, ⏳ Vercel |
+| `GUPSHUP_SOURCE_NUMBER` | WhatsApp number (`917811973773`) | ✅ Set locally, ⏳ Vercel |
+| `GUPSHUP_WABA_ID` | WhatsApp Business Account ID (`1512538099842099`) | ✅ Set locally, ⏳ Vercel |
+| `GUPSHUP_TEMPLATE_ID` | Template name (`fursat_partner`) | ✅ Approved, set locally, ⏳ Vercel |
 
 OpenClaw calls these APIs directly. No browser automation needed for Steps 7-9.
 
@@ -300,7 +319,7 @@ The Airbnb host dashboard listing flow (what the skill does in Steps 10-11):
 
 **Airbnb ToS risk:** ToS prohibits "bots, crawlers, scrapers, or other automated means." OpenClaw mitigates by using Extension Relay (real Chrome profile, not headless), human-like delays (8-20 min between listings, 3-4/hour max), Bezier curve mouse movements, randomized keystroke timing (50-150ms), and your actual logged-in session.
 
-**Alternative: Channel Manager route.** Instead of browser automation, use a PMS/channel manager that already has Airbnb API access (Hostaway, Guesty, Channex, Smoobu). You integrate with their API; they push to Airbnb. Fully ToS-compliant. Worth evaluating if scale exceeds 50 properties.
+**Channel managers (Channex, Hostaway, Guesty) do NOT create listings on any OTA.** No OTA allows direct content push via API — it would pollute their marketplace. Listings must be created on each OTA first (manually or browser automation), then connected to the channel manager. After connection, channel managers sync rates, availability, and bookings (2-way). Listing creation on every OTA — Airbnb, Booking.com, Goibibo, MakeMyTrip, Agoda — requires either manual work or browser automation (OpenClaw).
 
 ## Implementation Order
 
@@ -319,22 +338,26 @@ The Airbnb host dashboard listing flow (what the skill does in Steps 10-11):
 
 > Goal: Send WhatsApp inquiry templates and receive replies via webhook.
 
-- [ ] **1.1** Sign up for Gupshup WhatsApp Business API account
-- [ ] **1.2** Register/verify WhatsApp Business number on Gupshup dashboard
-- [ ] **1.3** Create WhatsApp template message in Gupshup console
-  - Category: Utility (not Marketing — saves 4x on cost)
+- [x] **1.1** Sign up for Gupshup WhatsApp Business API account — ✅ Done
+  - App: FursatFun, App ID: c0f1248e-e481-4906-aea5-b06b2e6a7cc1, Live
+  - WABA ID: 1512538099842099, Display Name: Fursat Fun
+  - Phone: 917811973773, Status: Connected, Active
+  - Messaging Limit: 250 customers/24hrs (starting tier)
+  - Customer ID: 4000331156
+- [x] **1.2** Register/verify WhatsApp Business number on Gupshup dashboard — ✅ Connected
+- [x] **1.3** Create WhatsApp template message in Gupshup console — ✅ Approved
+  - Template: `fursat_partner` (Marketing category) — approved 23 Feb 2026
+  - Also approved: `property_invite` (outbound onboarding invite)
   - Body with `{{1}}` (dates) and `{{2}}` (guest count) variables
-  - Add sample values for template review
-  - Wait for approval (minutes to 48 hours)
-- [ ] **1.4** Get API credentials from Gupshup dashboard
-  - API key (32-char hex)
-  - App name
-  - Source number (registered WhatsApp number)
-- [ ] **1.5** Add env vars to fursatphoto `.env.local` and Vercel
-  - `GUPSHUP_API_KEY`
-  - `GUPSHUP_APP_NAME`
-  - `GUPSHUP_SOURCE_NUMBER`
-  - `GUPSHUP_TEMPLATE_ID`
+  - Previous template "fursat_partners" was rejected (category mismatch)
+- [x] **1.4** Get API credentials from Gupshup dashboard — ✅ Done
+  - API key: sk_6ebbdf0c36664c4aa6bf6035fe366104
+  - App name: FursatFun
+  - Source number: 917811973773
+- [x] **1.5** Add env vars to fursatphoto `.env.local` — ✅ Done
+  - `GUPSHUP_API_KEY`, `GUPSHUP_APP_NAME`, `GUPSHUP_SOURCE_NUMBER`, `GUPSHUP_WABA_ID`
+  - ⏳ Still need to add to Vercel dashboard
+  - ⏳ `GUPSHUP_TEMPLATE_ID` — waiting for template approval
 - [x] **1.6** Build `POST /api/send-whatsapp` endpoint — ✅ Done
   - Single + bulk send, phone number cleaning, sequential sending
 - [x] **1.7** Build `POST /api/whatsapp-webhook` endpoint — ✅ Done
@@ -579,7 +602,7 @@ Each phase compounds on the previous one. Phase 1 builds supply. Phase 2 builds 
 | **FursatAgent** | AI guest communication, inquiry handling, Telegram notifications | Production |
 | **fursatphoto** | Property onboarding pipeline (photos, AI descriptions, sheet sync) | Production |
 | **OpenClaw skill** | Overnight market research, OTA checks, WhatsApp outreach | Built, not tested |
-| **Gupshup integration** | WhatsApp template sending + webhook for replies | Built, pending API keys |
+| **Gupshup integration** | WhatsApp template sending + webhook for replies | Built, API keys set, templates approved ✅ |
 | **Google Sheets** | Listings DB (145 properties), Booking tracker, Enquiry Capture | Production |
 
 ---
@@ -627,12 +650,14 @@ Channex White Label API plan: **$0.50/property/month** (vacation rental classifi
 
 ### Channex capabilities
 
-- **REST API** — programmatic property creation, rate/availability management, bulk updates
+- **REST API** — programmatic property creation (in Channex), rate/availability management, bulk updates
 - **50+ OTAs** including Airbnb, Booking.com, Agoda, Expedia
 - **MakeMyTrip + Goibibo** — confirmed supported (dedicated mapping guide in docs)
 - **White-label** — embed under Fursat brand, owners see our platform
 - **No API rate limit nightmare** — built for PMS integrations at scale
 - **Full docs**: https://docs.channex.io
+
+**Important limitation:** Channex syncs rates, availability, and bookings for EXISTING OTA listings only. No OTA allows listing creation via API — it would pollute their marketplace. Listings must be created on each OTA first (manually or via browser automation), then connected to Channex for ongoing sync. This applies to ALL OTAs: Airbnb, Booking.com, Goibibo, MakeMyTrip, Agoda, etc. OpenClaw browser automation handles listing creation across all platforms.
 
 ### Revenue impact of multi-channel
 
@@ -773,15 +798,19 @@ DAY
   Property owners reply with details, photos, pricing
   Webhook receives replies → matches to targets
   fursatphoto pipeline: photos + AI description + Sheet sync
-  Channex API: creates property on 7+ OTAs simultaneously
+  OpenClaw: creates listings on each OTA (browser automation, human pace)
+    → Airbnb, Booking.com, Goibibo, MakeMyTrip, Agoda (queued)
+    → No OTA allows listing creation via API — all require manual/browser
+  Channex: connect newly created listings for ongoing sync
 
 EVENING
-  New properties are LIVE on Airbnb, Booking.com, Goibibo,
-  MakeMyTrip, Agoda, Expedia, Google Hotels
+  New properties going LIVE on OTAs as OpenClaw works through queue
+  (3-4 listings/hour per OTA, per account)
 
 ONGOING
   FursatAgent handles all guest inquiries (AI-powered)
-  Channex syncs availability/rates across all OTAs
+  Channex syncs rates/availability/bookings across all connected OTAs
+  OpenClaw continues working through listing creation queue
   Cashfree/Stripe handles payments automatically
   You: review metrics, handle escalations, sign Phase 2 contracts
 
@@ -801,7 +830,7 @@ COST: ~₹35/property onboarding + ₹42/property/month distribution
 | **Discovery** | OpenClaw | $0.15-0.30/property | Overnight market research |
 | **Outreach** | Gupshup WhatsApp | ₹0.21/message | Owner acquisition at scale |
 | **Payments** | Cashfree / Stripe | 2% transaction fee | Automated split payments when needed |
-| **Database** | Supabase + Redis | Free tier → scale | Conversations, caching, dedup |
+| **Database** | MongoDB Atlas + Google Sheets | Free tier → scale | MongoDB = source of truth (machine), Sheets = human frontend |
 | **Notifications** | Telegram Bot | Free | Operator alerts, action buttons |
 | **Content** | Instagram + fursat.fun | ₹1L seed budget | Demand generation, direct bookings |
 
