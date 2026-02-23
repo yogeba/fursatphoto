@@ -1,106 +1,147 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MongoClient } from "mongodb";
 
-// Gupshup webhook payload types
-interface GupshupMessageEvent {
-  app: string;
-  timestamp: number;
-  version: number;
-  type: "message" | "message-event";
-  payload: {
-    id: string;
-    source: string;
-    type: string;
-    payload: {
-      text?: string;
-      url?: string;
-      caption?: string;
-      filename?: string;
-    };
-    sender: {
-      phone: string;
-      name: string;
-      country_code: string;
-      dial_code: string;
-    };
-    context?: {
-      id: string;
-      gsId: string;
-    };
-  };
+// Store webhook events in MongoDB so they survive Vercel cold starts
+async function storeEvent(event: Record<string, unknown>) {
+  const uri = process.env.DATABASE_URL;
+  if (!uri) {
+    console.warn("[Webhook] No DATABASE_URL — event not persisted");
+    return;
+  }
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    const db = client.db();
+    await db.collection("webhook_events").insertOne({
+      ...event,
+      receivedAt: new Date(),
+    });
+  } catch (e) {
+    console.error("[Webhook] MongoDB store error:", e);
+  } finally {
+    await client.close();
+  }
 }
 
-interface GupshupStatusEvent {
-  app: string;
-  timestamp: number;
-  type: "message-event";
-  payload: {
-    id: string;
-    type: string;  // enqueued, sent, delivered, read, failed
-    destination: string;
-    gsId: string;
-  };
+async function getRecentEvents(limit = 20) {
+  const uri = process.env.DATABASE_URL;
+  if (!uri) return [];
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    const db = client.db();
+    return await db.collection("webhook_events")
+      .find({})
+      .sort({ receivedAt: -1 })
+      .limit(limit)
+      .toArray();
+  } catch (e) {
+    console.error("[Webhook] MongoDB read error:", e);
+    return [];
+  } finally {
+    await client.close();
+  }
 }
-
-// Store recent messages in memory (for dev/debugging — production would use a DB)
-const recentMessages: Array<{
-  timestamp: string;
-  phone: string;
-  name: string;
-  type: string;
-  text?: string;
-  mediaUrl?: string;
-}> = [];
-const MAX_STORED = 100;
 
 export async function POST(request: NextRequest) {
-  // Gupshup requires immediate 200 response — process async
   try {
     const body = await request.json();
+    console.log("[WhatsApp Webhook] Raw:", JSON.stringify(body));
 
-    // Log everything for debugging
-    console.log("[WhatsApp Webhook]", JSON.stringify(body, null, 2));
+    // Detect format and normalize
+    // Meta v3 format: { object: "whatsapp_business_account", entry: [...] }
+    // Gupshup v2 format: { app, timestamp, type: "message" | "message-event", payload: {...} }
 
-    if (body.type === "message") {
-      const event = body as GupshupMessageEvent;
-      const sender = event.payload.sender;
-      const msgType = event.payload.type;
-      const msgPayload = event.payload.payload;
+    if (body.object === "whatsapp_business_account" && body.entry) {
+      // Meta v3 format
+      for (const entry of body.entry) {
+        for (const change of entry.changes || []) {
+          const value = change.value || {};
 
-      const entry = {
-        timestamp: new Date(event.timestamp).toISOString(),
-        phone: sender.phone,
-        name: sender.name,
-        type: msgType,
-        text: msgPayload.text,
-        mediaUrl: msgPayload.url,
-      };
+          // Status updates (sent, delivered, read, failed)
+          for (const status of value.statuses || []) {
+            const event = {
+              format: "meta_v3",
+              eventType: "status",
+              status: status.status, // sent, delivered, read, failed
+              recipientId: status.recipient_id,
+              messageId: status.id,
+              timestamp: status.timestamp,
+              errors: status.errors,
+            };
+            console.log(`[WhatsApp] Status: ${status.status} for ${status.recipient_id}`);
+            await storeEvent(event);
+          }
 
-      // Store in memory
-      recentMessages.unshift(entry);
-      if (recentMessages.length > MAX_STORED) recentMessages.pop();
-
-      console.log(`[WhatsApp] Inbound from ${sender.phone} (${sender.name}): ${msgType} — ${msgPayload.text || msgPayload.url || "(media)"}`);
-
-      // TODO Phase 4: Match phone to Targets sheet, trigger onboard-property pipeline
-      // For now, just log and store
-
-    } else if (body.type === "message-event") {
-      const event = body as GupshupStatusEvent;
-      console.log(`[WhatsApp] Status: ${event.payload.type} for ${event.payload.destination} (msg ${event.payload.id})`);
+          // Inbound messages
+          for (const message of value.messages || []) {
+            const contact = (value.contacts || [])[0] || {};
+            const event = {
+              format: "meta_v3",
+              eventType: "message",
+              phone: message.from,
+              name: contact.profile?.name || "",
+              messageType: message.type,
+              text: message.text?.body || message.button?.text || "",
+              mediaUrl: message.image?.id || message.document?.id || "",
+              timestamp: message.timestamp,
+            };
+            console.log(`[WhatsApp] Inbound from ${message.from}: ${message.type} — ${event.text || "(media)"}`);
+            await storeEvent(event);
+          }
+        }
+      }
+    } else if (body.type === "message" || body.type === "message-event") {
+      // Gupshup v2 format
+      if (body.type === "message") {
+        const sender = body.payload?.sender || {};
+        const msgPayload = body.payload?.payload || {};
+        const event = {
+          format: "gupshup_v2",
+          eventType: "message",
+          phone: sender.phone,
+          name: sender.name,
+          messageType: body.payload?.type,
+          text: msgPayload.text,
+          mediaUrl: msgPayload.url,
+          timestamp: new Date(body.timestamp).toISOString(),
+        };
+        console.log(`[WhatsApp] Inbound from ${sender.phone}: ${body.payload?.type} — ${msgPayload.text || "(media)"}`);
+        await storeEvent(event);
+      } else if (body.type === "message-event") {
+        const event = {
+          format: "gupshup_v2",
+          eventType: "status",
+          status: body.payload?.type,
+          recipientId: body.payload?.destination,
+          messageId: body.payload?.id,
+          gsId: body.payload?.gsId,
+          timestamp: new Date(body.timestamp).toISOString(),
+        };
+        console.log(`[WhatsApp] Status: ${body.payload?.type} for ${body.payload?.destination}`);
+        await storeEvent(event);
+      }
+    } else {
+      // Unknown format — store raw for debugging
+      await storeEvent({ format: "unknown", raw: body });
+      console.log("[WhatsApp Webhook] Unknown format:", JSON.stringify(body));
     }
   } catch (error) {
-    // Log but don't fail — Gupshup retries on non-200
     console.error("[WhatsApp Webhook] Parse error:", error);
   }
 
-  // Always return 200 with empty body — Gupshup requirement
+  // Always return 200 — Gupshup/Meta retries on non-200
   return new NextResponse("", { status: 200 });
 }
 
-// GET endpoint to check recent messages (for debugging/monitoring)
+// GET endpoint to check recent events (debugging/monitoring)
 export async function GET() {
+  const events = await getRecentEvents(20);
   return NextResponse.json({
-    count: recentMessages.length,
-    messages: recentMessages.slice(0, 20),
+    count: events.length,
+    events: events.map(e => {
+      const { _id, ...rest } = e;
+      return rest;
+    }),
   });
 }
